@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: document-worker
+  namespace: app
+  labels:
+    app: document-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: document-worker
+  template:
+    metadata:
+      labels:
+        app: document-worker
+    spec:
+      serviceAccountName: document-worker-sa
+      containers:
+        - name: worker
+          image: <your-registry>/document-worker:latest
+          env:
+            - name: S3_BUCKET
+              value: <your-s3-bucket>
+            - name: DYNAMODB_TABLE
+              value: <your-dynamodb-table>
+            - name: AWS_REGION
+              value: <aws-region>
+            - name: SQS_QUEUE_URL
+              value: <your-sqs-queue-url>
+            - name: OPENSEARCH_ENDPOINT
+              value: <your-opensearch-endpoint>
+            - name: REDIS_ENDPOINT
+              value: <your-elasticache-redis-endpoint>
+         
