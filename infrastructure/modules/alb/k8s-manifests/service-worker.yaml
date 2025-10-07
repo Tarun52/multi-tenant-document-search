@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: document-worker
+  namespace: app
+spec:
+  type: ClusterIP
+  selector:
+    app: document-worker
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
