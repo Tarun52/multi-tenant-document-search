@@ -1,18 +1,42 @@
+resource "aws_security_group" "opensearch_sg" {
+  name        = "${var.env}-opensearch-sg"
+  description = "Allow EKS to access OpenSearch"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description     = "Allow HTTPS from EKS nodes"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [var.eks_node_sg_id] # Required input: EKS node SG
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = var.tags
+}
+
 resource "aws_opensearch_domain" "document_search" {
   domain_name = "${var.env}-document-search"
 
   cluster_config {
-    instance_type        = var.instance_type
-    instance_count       = var.instance_count
+    instance_type          = var.instance_type
+    instance_count         = var.instance_count
     zone_awareness_enabled = true
+
     zone_awareness_config {
       availability_zone_count = length(var.subnet_ids)
     }
   }
 
   vpc_options {
-    subnet_ids = var.subnet_ids
-    security_group_ids = [var.security_group_id]
+    subnet_ids         = var.subnet_ids
+    security_group_ids = [aws_security_group.opensearch_sg.id]
   }
 
   ebs_options {
@@ -21,13 +45,14 @@ resource "aws_opensearch_domain" "document_search" {
   }
 
   domain_endpoint_options {
-    enforce_https = true
+    enforce_https       = true
     tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
   }
 
   advanced_security_options {
-    enabled = var.advanced_security_enabled
+    enabled                        = var.advanced_security_enabled
     internal_user_database_enabled = var.internal_user_database_enabled
+
     master_user_options {
       master_user_name     = var.master_user_name
       master_user_password = var.master_user_password
@@ -38,7 +63,6 @@ resource "aws_opensearch_domain" "document_search" {
 }
 
 resource "aws_opensearch_domain_policy" "document_search_policy" {
-  domain_name = aws_opensearch_domain.document_search.domain_name
+  domain_name     = aws_opensearch_domain.document_search.domain_name
   access_policies = var.access_policies_json
 }
-
