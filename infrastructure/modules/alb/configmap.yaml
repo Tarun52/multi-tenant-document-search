@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: document-config
+  namespace: app
+data:
+  MAX_FILE_SIZE: "104857600" 
+  LOG_LEVEL: "INFO"
