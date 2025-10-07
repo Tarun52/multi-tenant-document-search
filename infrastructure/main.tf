@@ -9,12 +9,17 @@ module "vpc" {
 }
 
 module "eks" {
-  source = "./modules/eks"
-  env                     = var.env
-  vpc_id                  = module.vpc.vpc_id
-  eks_private_subnet_ids  = module.vpc.eks_private_subnet_ids
-  public_subnet_ids       = module.vpc.public_subnet_ids
-  tags                    = var.tags
+  source                   = "./modules/eks"
+  env                      = var.env
+  vpc_id                   = module.vpc.vpc_id
+  eks_private_subnet_ids   = module.vpc.eks_private_subnet_ids
+  public_subnet_ids        = module.vpc.public_subnet_ids
+  namespace_names          = ["app", "monitoring", "system"]
+  kubeconfig_path          = var.kubeconfig_path
+  ssh_key_name             = var.ssh_key_name
+  cluster_name             = var.cluster_name
+  nodegroups               = var.nodegroups
+  tags                     = var.tags
 }
 
 module "alb" {
@@ -22,6 +27,7 @@ module "alb" {
   env               = var.env
   vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
+  tags              = var.tags
   depends_on        = [module.eks]
 }
 
@@ -31,7 +37,14 @@ module "alb_ingress" {
   public_subnet_ids   = module.vpc.public_subnet_ids
   api_service_name    = "document-api-service"
   worker_service_name = "document-worker"
+  tags                = var.tags
   depends_on          = [module.alb]
+}
+
+module "cognito" {
+  source = "./modules/cognito"
+  env    = var.env
+  tags   = var.tags
 }
 
 module "api-gateway" {
@@ -52,13 +65,8 @@ module "route53" {
   subdomain            = var.subdomain
   api_gw_domain_target = module.api-gateway.custom_domain_name
   api_gw_zone_id       = module.api-gateway.custom_domain_zone_id
+  tags                 = var.tags
   depends_on           = [module.api-gateway]
-}
-
-module "cognito" {
-  source = "./modules/cognito"
-  env    = var.env
-  tags   = var.tags
 }
 
 module "s3" {
@@ -80,42 +88,42 @@ module "sqs" {
 }
 
 module "opensearch" {
-  source                     = "./modules/opensearch"
-  env                        = var.env
-  subnet_ids                 = module.vpc.services_private_subnet_ids
-  security_group_id          = module.eks.cluster_security_group_id
-  instance_type              = "m6g.large.search"
-  instance_count             = 3
-  volume_size                = 50
-  advanced_security_enabled  = true
+  source                         = "./modules/opensearch"
+  env                            = var.env
+  subnet_ids                     = module.vpc.services_private_subnet_ids
+  security_group_id              = module.eks.cluster_security_group_id
+  instance_type                  = "m6g.large.search"
+  instance_count                 = 3
+  volume_size                    = 50
+  advanced_security_enabled      = true
   internal_user_database_enabled = true
-  master_user_name           = var.env == "prod" ? "admin" : "test"
-  master_user_password       = var.opensearch_password
-  access_policies_json       = var.opensearch_access_policies_json
-  tags                       = var.tags
+  master_user_name               = var.env == "prod" ? "admin" : "test"
+  master_user_password           = var.opensearch_password
+  access_policies_json           = var.opensearch_access_policies_json
+  tags                           = var.tags
 }
 
 module "elasticache" {
-  source           = "./modules/elasticache"
-  env              = var.env
-  vpc_id           = module.vpc.vpc_id
-  subnet_ids       = module.vpc.services_private_subnet_ids
-  eks_node_sg_id   = module.eks.worker_security_group_id
-  node_type        = "cache.t3.micro"
-  node_count       = 1
-  tags             = var.tags
+  source         = "./modules/elasticache"
+  env            = var.env
+  vpc_id         = module.vpc.vpc_id
+  subnet_ids     = module.vpc.services_private_subnet_ids
+  eks_node_sg_id = module.eks.worker_security_group_id
+  node_type      = "cache.t3.micro"
+  node_count     = 1
+  tags           = var.tags
 }
 
 module "rds" {
-  source            = "./modules/rds"
-  env               = var.env
-  vpc_id            = module.vpc.vpc_id
-  subnet_ids        = module.vpc.services_private_subnet_ids
-  eks_node_sg_id    = module.eks.worker_security_group_id
-  db_name           = "documents"
-  username          = var.db_username
-  password          = var.db_password
-  tags              = var.tags
+  source         = "./modules/rds"
+  env            = var.env
+  vpc_id         = module.vpc.vpc_id
+  subnet_ids     = module.vpc.services_private_subnet_ids
+  eks_node_sg_id = module.eks.worker_security_group_id
+  db_name        = "documents"
+  username       = var.db_username
+  password       = var.db_password
+  tags           = var.tags
 }
 
 module "waf" {
@@ -123,4 +131,3 @@ module "waf" {
   env    = var.env
   tags   = var.tags
 }
-:wq
