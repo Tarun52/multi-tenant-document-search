@@ -20,17 +20,68 @@ variable "tags" {
 }
 
 variable "domain_name" {
-  type = string
+  description = "Root domain name"
+  type        = string
 }
 
 variable "subdomain" {
-  type = string
+  description = "Subdomain for services"
+  type        = string
 }
 
 variable "certificate_arn" {
-  type = string
+  description = "ACM certificate ARN for custom domain"
+  type        = string
 }
 
 variable "custom_domain_name" {
-  type = string
+  description = "Custom domain name for API Gateway"
+  type        = string
+}
+
+variable "cluster_name" {
+  description = "EKS Cluster name"
+  type        = string
+}
+
+variable "kubeconfig_path" {
+  description = "Path to kubeconfig file for kubectl"
+  type        = string
+}
+
+variable "ssh_key_name" {
+  description = "SSH key name for EC2 instances"
+  type        = string
+}
+
+variable "nodegroups" {
+  description = "Nodegroups configuration map"
+  type = map(object({
+    desired_capacity = number
+    max_capacity     = number
+    min_capacity     = number
+    instance_types   = list(string)
+  }))
+}
+
+variable "opensearch_password" {
+  description = "Password for OpenSearch master user"
+  type        = string
+  sensitive   = true
+}
+
+variable "opensearch_access_policies_json" {
+  description = "JSON string of OpenSearch access policies"
+  type        = string
+}
+
+variable "db_username" {
+  description = "Database username"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
 }
